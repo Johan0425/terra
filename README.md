@@ -7,15 +7,44 @@ from Google Fit or logged manually.
 **Live:** https://terra-theta-eosin.vercel.app
 **Repo:** https://github.com/Johan0425/terra
 
-## Status: Phase 1 of 5
+## Status: Phase 2 of 5
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Next.js + Tailwind + Auth.js (Google login) + DB schema + shared types | ✅ done |
-| 2 | 3D scene: GLB avatar, OrbitControls, three-point lighting | ⬜ next |
-| 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ⬜ |
+| 2 | 3D scene: GLB avatar, OrbitControls, three-point lighting | ✅ done |
+| 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ⬜ next |
 | 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ⬜ |
 | 5 | Public landing page + milestones/share cards + demo seed data | ⬜ |
+
+### Phase 2 notes — the placeholder model
+
+`public/models/character.glb` is **not** a Mixamo export — Mixamo requires an
+interactive Adobe-account browser session with no public API, so an agent
+can't fetch one. It's `RobotExpressive.glb`, the CC0-licensed rigged
+placeholder from the three.js examples repo (credit: Tomás Laulhé /
+Don McCurdy), run through:
+
+```bash
+npx gltf-transform optimize assets-src/RobotExpressive.raw.glb public/models/character.glb \
+  --compress draco --flatten false --join false --instance false --simplify false
+npx gltfjsx public/models/character.glb --types --keepnames
+```
+
+(`--flatten`/`--join`/`--simplify` are off because this rig uses bone-parented
+rigid meshes rather than full skin weighting — the default `optimize` preset
+collapses that hierarchy.) Result: 182KB, well under the 2MB budget, with 14
+named AnimationClips (`Idle`, `Running`, `Sitting`, `Dance`, …) that Phase 3's
+state machine maps onto TERRA's 4 states.
+
+**To swap in your own model:** export a rigged humanoid (Mixamo or otherwise)
+with clips named to match `AnimationStateMachine.tsx`'s mapping, run it
+through the same two commands, drop it at the same path, and recompute
+`AVATAR_SCALE_CORRECTION` in `components/avatar/AvatarModel.tsx` — the
+placeholder's raw export bakes in a non-1:1 bone-space scale, so that
+constant will differ per model. See that file's top comment for how it was
+derived (`gltf-transform inspect` gives the authoritative bbox; don't trust a
+runtime `Box3` reading taken before the scene's matrices have settled).
 
 Everything currently in the repo is real, wired-up code — nothing is a mock.
 Lines marked `// TODO: Johan` are copy/branding placeholders or logic that a

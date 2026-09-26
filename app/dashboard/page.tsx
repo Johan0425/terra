@@ -1,8 +1,9 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
+import AvatarSection from "@/components/dashboard/AvatarSection";
 
-// Phase 1: identity + shell only. The avatar canvas, HUD stat bars, and
-// history timeline land in Phases 2-4 — see the project README for the phase plan.
+// Phase 2 adds the 3D avatar canvas. The HUD stat bars and history timeline
+// land in Phase 4 — see the project README for the phase plan.
 export default async function DashboardPage() {
   const session = await auth();
 
@@ -37,9 +38,14 @@ export default async function DashboardPage() {
           </form>
         </header>
 
-        <section className="mt-10 border border-dashed border-zinc-800 p-8 text-center text-zinc-500">
-          // TODO: Johan — Phase 2 mounts the 3D AvatarCanvas here, Phase 4
-          // wires the stat-bar HUD to real Google Fit / manual-log data.
+        <section className="mt-10">
+          <AvatarSection />
+        </section>
+
+        <section className="mt-6 border border-dashed border-zinc-800 p-6 text-center text-sm text-zinc-500">
+          {/* TODO: Johan — Phase 3 wires the 4-state Animation State Machine.
+              Phase 4 adds the HUD stat bars and history timeline here. */}
+          HUD stat bars land in Phase 4.
         </section>
       </div>
     </main>
