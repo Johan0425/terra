@@ -4,6 +4,9 @@ A 3D digital twin of your fitness progress. Your avatar's posture, aura, and
 mood shift with your real sleep, activity, and training consistency — synced
 from Google Fit or logged manually.
 
+**Live:** https://terra-theta-eosin.vercel.app
+**Repo:** https://github.com/Johan0425/terra
+
 ## Status: Phase 1 of 5
 
 | Phase | Scope | Status |
