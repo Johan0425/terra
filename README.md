@@ -7,15 +7,36 @@ from Google Fit or logged manually.
 **Live:** https://terra-theta-eosin.vercel.app
 **Repo:** https://github.com/Johan0425/terra
 
-## Status: Phase 2 of 5
+## Status: Phase 3 of 5
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Next.js + Tailwind + Auth.js (Google login) + DB schema + shared types | ✅ done |
 | 2 | 3D scene: GLB avatar, OrbitControls, three-point lighting | ✅ done |
-| 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ⬜ next |
-| 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ⬜ |
+| 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ✅ done |
+| 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ⬜ next |
 | 5 | Public landing page + milestones/share cards + demo seed data | ⬜ |
+
+### Phase 3 notes — state machine + particle aura
+
+`AnimationStateMachine.tsx` maps TERRA's 4 `MoodState`s onto the placeholder
+rig's clips (`neutral`→Idle, `energized`→Running, `fatigued`→Sitting,
+`leveling-up`→Dance), always crossfading (`fadeIn`/`fadeOut(0.3)`) rather than
+cutting. `leveling-up` plays once (`LoopOnce`) and settles back to Idle when
+the clip finishes. `ParticleAura.tsx` is a single `InstancedMesh` (160 max
+particles) whose active count, speed, and drift direction (rise/fall/ambient)
+react to `energyLevel` and `moodState`; color always matches the rim light.
+
+The dashboard currently shows a manual state switcher
+(Fatigued/Neutral/Energized/Leveling&nbsp;Up buttons in `AvatarSection.tsx`)
+to QA the transitions — Phase 4 deletes that switcher and drives
+`moodState`/`energyLevel` from `avatarEngine.ts`'s real output instead.
+
+Note: the placeholder rig's `Sitting`/`Standing` clips are authored as
+single-pose holds (0-duration), so those two states read mostly through the
+particle aura rather than a dramatic pose change — expected for this
+placeholder, not a bug. A custom model with more expressive clips (per the
+Phase 2 notes above) will make the pose difference more visible too.
 
 ### Phase 2 notes — the placeholder model
 

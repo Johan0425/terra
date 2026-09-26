@@ -1,20 +1,27 @@
 "use client";
 
-// Phase 2: the 3D scene shell — GLB loading, orbit camera, three-point lighting,
-// reflective floor. No Animation State Machine yet (that's Phase 3); this just
-// proves the pipeline end-to-end by playing the model's "Idle" clip.
+// Phase 3: the scene now runs the full Animation State Machine (4 moods,
+// crossfaded clip transitions) plus the energy-reactive particle aura. The
+// rim light and particles both track auraColor so a state change reads as
+// one coherent shift, not just a swapped animation.
+//
+// TODO: Johan — Phase 4's avatarEngine.ts becomes the source of truth for
+// auraColor/energyLevel/moodState (computed from real metrics). MOOD_AURA
+// below is a placeholder mapping for validating transitions with seed data.
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
-import {
-  Environment,
-  MeshReflectorMaterial,
-  OrbitControls,
-} from "@react-three/drei";
-import { AvatarModel } from "./AvatarModel";
+import { Environment, MeshReflectorMaterial, OrbitControls } from "@react-three/drei";
+import type { MoodState } from "@/lib/types";
+import { AnimationStateMachine } from "./AnimationStateMachine";
+import { ParticleAura } from "./ParticleAura";
 
-const NEUTRAL_AURA = "#7c8a9a"; // grey-blue — matches the "idle/neutral" spec state
+const MOOD_AURA: Record<MoodState, string> = {
+  fatigued: "#8a5a3c", // dull rust — low energy
+  neutral: "#7c8a9a", // grey-blue
+  energized: "#d4af37", // gold — brand accent
+  "leveling-up": "#ffe066", // bright gold flash
+};
 
 function ReflectiveFloor() {
   return (
@@ -52,28 +59,6 @@ function ThreePointLighting({ auraColor }: { auraColor: string }) {
       <directionalLight position={[-4, 2, 2]} intensity={0.6} color="#8fb4ff" />
       <pointLight position={[0, 2.4, -3]} intensity={25} color={auraColor} />
     </>
-  );
-}
-
-function Model() {
-  const [actions, setActions] = useState<Record<
-    string,
-    THREE.AnimationAction | null
-  > | null>(null);
-
-  useEffect(() => {
-    const idle = actions?.Idle;
-    idle?.reset().fadeIn(0.3).play();
-    return () => {
-      idle?.fadeOut(0.3);
-    };
-  }, [actions]);
-
-  return (
-    <AvatarModel
-      position={[0, 0, 0]}
-      onReady={setActions}
-    />
   );
 }
 
@@ -123,12 +108,16 @@ function CanvasFallback() {
 }
 
 export interface AvatarCanvasProps {
-  auraColor?: string;
+  moodState: MoodState;
+  energyLevel: number;
 }
 
 export default function AvatarCanvas({
-  auraColor = NEUTRAL_AURA,
+  moodState,
+  energyLevel,
 }: AvatarCanvasProps) {
+  const auraColor = MOOD_AURA[moodState];
+
   return (
     <div className="h-full w-full bg-black">
       <Suspense fallback={<CanvasFallback />}>
@@ -142,7 +131,13 @@ export default function AvatarCanvas({
           <ThreePointLighting auraColor={auraColor} />
           <Environment preset="city" environmentIntensity={0.15} />
           <Suspense fallback={null}>
-            <Model />
+            <AnimationStateMachine moodState={moodState}>
+              <ParticleAura
+                auraColor={auraColor}
+                energyLevel={energyLevel}
+                moodState={moodState}
+              />
+            </AnimationStateMachine>
           </Suspense>
           <ReflectiveFloor />
           <AutoRotate />
