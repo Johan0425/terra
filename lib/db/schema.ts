@@ -30,6 +30,11 @@ export const users = pgTable("user", {
   goal: text("goal").$type<UserGoal>().notNull().default("fat-loss"),
   currentStreak: integer("currentStreak").notNull().default(0),
   longestStreak: integer("longestStreak").notNull().default(0),
+  // Cropped/aligned face photo — a pathname in our private Vercel Blob
+  // store (not a public URL; served back out through the authenticated
+  // /api/avatar-photo/photo route). Mapped onto the avatar's head as a
+  // texture — see components/avatar/FaceCard.tsx.
+  avatarPhotoPath: text("avatarPhotoPath"),
 });
 
 export const accounts = pgTable(

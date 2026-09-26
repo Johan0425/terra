@@ -110,6 +110,9 @@ export default async function DashboardPage() {
             <AvatarSection
               moodState={avatarState.moodState}
               energyLevel={avatarState.energyLevel}
+              facePhotoUrl={
+                user?.avatarPhotoPath ? "/api/avatar-photo/photo" : undefined
+              }
             />
 
             <div className="mt-4">

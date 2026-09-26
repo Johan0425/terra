@@ -7,7 +7,7 @@ from Google Fit or logged manually.
 **Live:** https://terra-theta-eosin.vercel.app
 **Repo:** https://github.com/Johan0425/terra
 
-## Status: Phase 5 of 5 — feature-complete
+## Status: Phase 5 of 5 — feature-complete, plus a post-launch feature
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -16,6 +16,45 @@ from Google Fit or logged manually.
 | 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ✅ done |
 | 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ✅ done |
 | 5 | Public landing page + milestones/share cards + demo seed data | ✅ done |
+| — | Face photo on the avatar (post-launch addition, see below) | ✅ done |
+
+### Face photo — "make the avatar recognizably you"
+
+Settings (`/dashboard/settings`) has an "Avatar" section where you upload a
+photo of yourself. The pipeline, end to end:
+
+1. **Detect + crop, entirely in your browser.** `lib/faceDetection.ts` uses
+   Google's MediaPipe Tasks Vision (BlazeFace short-range detector, ~230KB,
+   loaded from Google's/jsdelivr's CDN) to find your face and eye positions,
+   then de-rotates and crops to a level, centered, passport-style headshot.
+   **The original photo never leaves your device** — only the cropped result
+   is ever uploaded.
+2. **Upload to private storage.** The crop is pushed straight from the
+   browser to a private Vercel Blob store (`components/dashboard/
+   AvatarPhotoUpload.tsx` → `/api/avatar-photo/upload`, using `@vercel/blob/
+   client`'s direct-upload pattern — bypasses Vercel's 4.5MB function body
+   limit, though a single photo wouldn't hit that anyway). `/api/avatar-photo/
+   photo` streams it back out, authenticated, only to its owner.
+3. **On the avatar.** `AvatarModel.tsx` finds whichever bone/node has "head"
+   in its name (works for this placeholder rig and for a swapped-in Mixamo
+   character alike) and billboards a small textured card there — always
+   facing the camera, tracked every frame, so it survives `AutoRotate` and
+   manual orbiting.
+
+Why MediaPipe over the more commonly-suggested `face-api.js`: the latter is
+unmaintained since ~2020 and pulls in a high-severity-vulnerable old
+TensorFlow.js/node-fetch chain. MediaPipe Tasks Vision is Google's current,
+actively maintained solution.
+
+**Considered and explicitly not built** (see the conversation that led here
+for the full reasoning): real-time LiDAR/photogrammetry body scanning. No
+browser API exposes sensor-level 3D capture; the realistic services either
+disappeared (Ready Player Me, shut down Jan 2026) or don't fit a personal
+project's budget (MetaPerson/Avatar SDK starts at $800/mo with API access
+Enterprise-gated). A self-hosted, open-source, photo-driven 3D body
+reconstruction pipeline (SMPL-based) remains a real option for later — it's
+a genuine ML-engineering project, not a quick addition, so it's deliberately
+out of scope here.
 
 ### Phase 5 notes — landing page, milestones, seed data
 

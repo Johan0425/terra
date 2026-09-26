@@ -16,6 +16,13 @@ export async function updateUserGoal(userId: string, goal: UserGoal) {
   await db.update(users).set({ goal }).where(eq(users.id, userId));
 }
 
+export async function updateUserAvatarPhotoPath(userId: string, path: string) {
+  await db
+    .update(users)
+    .set({ avatarPhotoPath: path })
+    .where(eq(users.id, userId));
+}
+
 export async function updateUserStreaks(
   userId: string,
   currentStreak: number,

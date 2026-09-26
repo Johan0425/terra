@@ -23,15 +23,21 @@ const AvatarCanvas = dynamic(() => import("@/components/avatar/AvatarCanvas"), {
 export interface AvatarSectionProps {
   moodState: MoodState;
   energyLevel: number;
+  facePhotoUrl?: string;
 }
 
 export default function AvatarSection({
   moodState,
   energyLevel,
+  facePhotoUrl,
 }: AvatarSectionProps) {
   return (
     <div className="h-[60vh] w-full border border-amber-500/20 sm:h-[70vh]">
-      <AvatarCanvas moodState={moodState} energyLevel={energyLevel} />
+      <AvatarCanvas
+        moodState={moodState}
+        energyLevel={energyLevel}
+        facePhotoUrl={facePhotoUrl}
+      />
     </div>
   );
 }

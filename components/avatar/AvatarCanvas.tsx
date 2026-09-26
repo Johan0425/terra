@@ -103,11 +103,13 @@ function CanvasFallback() {
 export interface AvatarCanvasProps {
   moodState: MoodState;
   energyLevel: number;
+  facePhotoUrl?: string;
 }
 
 export default function AvatarCanvas({
   moodState,
   energyLevel,
+  facePhotoUrl,
 }: AvatarCanvasProps) {
   const auraColor = AURA_COLORS[moodState];
 
@@ -124,7 +126,7 @@ export default function AvatarCanvas({
           <ThreePointLighting auraColor={auraColor} />
           <Environment preset="city" environmentIntensity={0.15} />
           <Suspense fallback={null}>
-            <AnimationStateMachine moodState={moodState}>
+            <AnimationStateMachine moodState={moodState} facePhotoUrl={facePhotoUrl}>
               <ParticleAura
                 auraColor={auraColor}
                 energyLevel={energyLevel}

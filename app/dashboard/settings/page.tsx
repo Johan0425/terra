@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getUser, updateUserGoal } from "@/lib/db/queries";
 import { revalidatePath } from "next/cache";
 import type { UserGoal } from "@/lib/types";
+import { AvatarPhotoUpload } from "@/components/dashboard/AvatarPhotoUpload";
 
 const GOALS: { value: UserGoal; label: string; blurb: string }[] = [
   {
@@ -96,6 +97,16 @@ export default async function SettingsPage() {
             Save Goal
           </button>
         </form>
+
+        <h2 className="mt-8 text-xs uppercase tracking-[0.3em] text-amber-500/80">
+          Avatar
+        </h2>
+        <div className="mt-4">
+          <AvatarPhotoUpload
+            userId={session.user.id}
+            hasExistingPhoto={Boolean(user?.avatarPhotoPath)}
+          />
+        </div>
 
         {/* TODO: Johan — Phase 5 adds the milestone/medal gallery here. */}
       </div>
