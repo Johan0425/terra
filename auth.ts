@@ -8,6 +8,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "database" },
   providers: [
     Google({
+      // Auth.js v5 auto-detects AUTH_GOOGLE_ID/AUTH_GOOGLE_SECRET by default —
+      // this app's env vars (and the README/.env.example) use the
+      // GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET names instead, so they must be
+      // passed explicitly or the provider silently gets an undefined
+      // clientId (surfaces as Google's own "invalid_client" error page).
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
           // access_type: offline + prompt: consent is what makes Google return
