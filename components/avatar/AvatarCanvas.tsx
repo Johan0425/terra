@@ -1,27 +1,17 @@
 "use client";
 
-// Phase 3: the scene now runs the full Animation State Machine (4 moods,
-// crossfaded clip transitions) plus the energy-reactive particle aura. The
-// rim light and particles both track auraColor so a state change reads as
-// one coherent shift, not just a swapped animation.
-//
-// TODO: Johan — Phase 4's avatarEngine.ts becomes the source of truth for
-// auraColor/energyLevel/moodState (computed from real metrics). MOOD_AURA
-// below is a placeholder mapping for validating transitions with seed data.
+// The scene runs the full Animation State Machine (4 moods, crossfaded clip
+// transitions) plus the energy-reactive particle aura. The rim light and
+// particles both track auraColor (from lib/avatarEngine.ts) so a state
+// change reads as one coherent shift, not just a swapped animation.
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment, MeshReflectorMaterial, OrbitControls } from "@react-three/drei";
 import type { MoodState } from "@/lib/types";
+import { AURA_COLORS } from "@/lib/avatarEngine";
 import { AnimationStateMachine } from "./AnimationStateMachine";
 import { ParticleAura } from "./ParticleAura";
-
-const MOOD_AURA: Record<MoodState, string> = {
-  fatigued: "#8a5a3c", // dull rust — low energy
-  neutral: "#7c8a9a", // grey-blue
-  energized: "#d4af37", // gold — brand accent
-  "leveling-up": "#ffe066", // bright gold flash
-};
 
 function ReflectiveFloor() {
   return (
@@ -116,7 +106,7 @@ export default function AvatarCanvas({
   moodState,
   energyLevel,
 }: AvatarCanvasProps) {
-  const auraColor = MOOD_AURA[moodState];
+  const auraColor = AURA_COLORS[moodState];
 
   return (
     <div className="h-full w-full bg-black">

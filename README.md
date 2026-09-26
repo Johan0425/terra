@@ -7,15 +7,42 @@ from Google Fit or logged manually.
 **Live:** https://terra-theta-eosin.vercel.app
 **Repo:** https://github.com/Johan0425/terra
 
-## Status: Phase 3 of 5
+## Status: Phase 4 of 5
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Next.js + Tailwind + Auth.js (Google login) + DB schema + shared types | ✅ done |
 | 2 | 3D scene: GLB avatar, OrbitControls, three-point lighting | ✅ done |
 | 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ✅ done |
-| 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ⬜ next |
-| 5 | Public landing page + milestones/share cards + demo seed data | ⬜ |
+| 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ✅ done |
+| 5 | Public landing page + milestones/share cards + demo seed data | ⬜ next |
+
+### Phase 4 notes — real data pipeline
+
+- `lib/avatarEngine.ts` — pure function, no DB/network imports. Scores
+  activity/sleep/consistency against `TARGETS`, weights them per
+  `userGoal` (`GOAL_WEIGHTS`), derives `strengthTier` from streak length,
+  and flags a milestone the day a streak first crosses 3/7/14/30/60/100
+  days. Tune `TARGETS`/`GOAL_WEIGHTS`/thresholds freely — nothing else
+  depends on their values.
+- `lib/googleFit/client.ts` — real calls to the Google Fit REST API
+  (`dataset:aggregate` for steps/calories, `sessions` for sleep + workout
+  detection), with automatic access-token refresh using the stored
+  `refresh_token`. **Requires the Fitness API enabled** in Google Cloud
+  Console (see setup steps above) and, for anyone who signed in before this
+  phase, signing out and back in to grant the new scopes.
+- `lib/processDailyMetrics.ts` — shared by both `/api/sync/google-fit` and
+  `/api/manual-log`: computes the streak, runs the engine, upserts the
+  `daily_snapshot`, updates the user's streak fields, and writes a
+  `milestone` row when one unlocks.
+- Dashboard (`app/dashboard/page.tsx`) is now a real Server Component: reads
+  today's snapshot + last 30 days from Postgres, renders the HUD stat bars,
+  the avatar (driven by real `moodState`/`energyLevel`), the sync button,
+  the manual-log fallback, and the timeline. Settings lets you change
+  `goal`, which reweights the engine immediately.
+- The milestone-unlock **celebration UI** (full-screen sequence, modal,
+  share card) is Phase 5 — the engine already flags `triggeredMilestone`
+  and the DB row gets written; only the "watch it happen" UI is deferred.
 
 ### Phase 3 notes — state machine + particle aura
 
@@ -112,9 +139,9 @@ Alternative: any Neon project's connection string works — paste it into
        add this once you have the Vercel URL)
 4. Copy the generated **Client ID** and **Client secret** into
    `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in `.env.local`.
-5. (Phase 4 only) **APIs & Services → Library** → search "Fitness API" →
-   Enable. This is not required for Phase 1 login, only for syncing steps /
-   sleep / heart rate later.
+5. **Required for Sync Data to work:** **APIs & Services → Library** →
+   search "Fitness API" → Enable. Not needed just to log in, only for the
+   Google Fit sync (`/api/sync/google-fit`).
 
 > **iOS / Apple Health note:** Apple Health has no public web API — only the
 > native HealthKit framework on-device. iPhone users who want their data in

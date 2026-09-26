@@ -14,12 +14,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // a refresh_token, which @auth/drizzle-adapter persists on `account`.
           access_type: "offline",
           prompt: "consent",
-          // Phase 1: identity only. Phase 4 (Google Fit sync) extends this to:
-          // "openid email profile " +
-          // "https://www.googleapis.com/auth/fitness.activity.read " +
-          // "https://www.googleapis.com/auth/fitness.sleep.read " +
-          // "https://www.googleapis.com/auth/fitness.heart_rate.read"
-          scope: "openid email profile",
+          // Fitness scopes power /api/sync/google-fit (Phase 4). Users who
+          // signed in during Phase 1-3 (before this changed) won't have
+          // these grants yet — they'll need to sign out and back in once.
+          scope: [
+            "openid",
+            "email",
+            "profile",
+            "https://www.googleapis.com/auth/fitness.activity.read",
+            "https://www.googleapis.com/auth/fitness.sleep.read",
+            "https://www.googleapis.com/auth/fitness.heart_rate.read",
+          ].join(" "),
         },
       },
     }),
