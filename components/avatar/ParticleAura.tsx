@@ -3,7 +3,7 @@
 // Ambient particle aura around the avatar, driven by energyLevel + moodState.
 // Uses a single InstancedMesh (not N separate meshes) so particle count stays
 // cheap on mobile GPUs regardless of how many of the MAX_PARTICLES are "active".
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { MoodState } from "@/lib/types";
@@ -33,17 +33,20 @@ export function ParticleAura({
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(auraColor), [auraColor]);
 
-  const particles = useMemo<Particle[]>(
-    () =>
-      Array.from({ length: MAX_PARTICLES }, () => ({
-        angle: Math.random() * Math.PI * 2,
-        radius: 0.5 + Math.random() * 0.7,
-        height: Math.random() * 1.9,
-        speed: 0.15 + Math.random() * 0.35,
-        phase: Math.random() * Math.PI * 2,
-      })),
-    [],
-  );
+  // Randomized per-particle layout is generated in an effect (not during
+  // render) — Math.random is an impure function React's render phase must
+  // not call. The array is then only ever mutated inside useFrame, which
+  // runs in Three's render loop, outside React's render cycle entirely.
+  const particlesRef = useRef<Particle[]>([]);
+  useEffect(() => {
+    particlesRef.current = Array.from({ length: MAX_PARTICLES }, () => ({
+      angle: Math.random() * Math.PI * 2,
+      radius: 0.5 + Math.random() * 0.7,
+      height: Math.random() * 1.9,
+      speed: 0.15 + Math.random() * 0.35,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }, []);
 
   // energyLevel scales both how many particles are visible and how fast they move.
   const activeCount = Math.max(
@@ -53,7 +56,8 @@ export function ParticleAura({
 
   useFrame((state, delta) => {
     const mesh = meshRef.current;
-    if (!mesh) return;
+    const particles = particlesRef.current;
+    if (!mesh || particles.length === 0) return;
 
     const t = state.clock.elapsedTime;
     const drift =

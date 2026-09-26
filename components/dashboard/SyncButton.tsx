@@ -3,8 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import type { AvatarState, DailyMetrics } from "@/lib/types";
 
-export function SyncButton() {
+export interface SyncButtonProps {
+  onResult?: (result: { metrics: DailyMetrics; avatarState: AvatarState }) => void;
+}
+
+export function SyncButton({ onResult }: SyncButtonProps) {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "syncing" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +24,7 @@ export function SyncButton() {
         throw new Error(data.error ?? "Sync failed");
       }
       setStatus("idle");
+      onResult?.(data);
       router.refresh();
     } catch (err) {
       setStatus("error");

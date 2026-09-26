@@ -7,7 +7,7 @@ from Google Fit or logged manually.
 **Live:** https://terra-theta-eosin.vercel.app
 **Repo:** https://github.com/Johan0425/terra
 
-## Status: Phase 4 of 5
+## Status: Phase 5 of 5 — feature-complete
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -15,7 +15,32 @@ from Google Fit or logged manually.
 | 2 | 3D scene: GLB avatar, OrbitControls, three-point lighting | ✅ done |
 | 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ✅ done |
 | 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ✅ done |
-| 5 | Public landing page + milestones/share cards + demo seed data | ⬜ next |
+| 5 | Public landing page + milestones/share cards + demo seed data | ✅ done |
+
+### Phase 5 notes — landing page, milestones, seed data
+
+- `app/page.tsx` + `components/landing/Hero.tsx` — public landing page with
+  the 3D avatar (in a hardcoded "energized" demo state, no login needed) as
+  the hero centerpiece, a 3-step explainer, placeholder testimonials
+  (`// TODO: Johan` — swap for real ones), and a `GlitchButton` CTA
+  (`components/ui/GlitchButton.tsx`) reused for both landing CTAs.
+- `components/dashboard/MilestoneModal.tsx` + `ShareCard.tsx` — when
+  `avatarEngine` flags a `triggeredMilestone` (from a real sync or manual
+  log), `DashboardActions.tsx` shows the full-screen "Milestone Unlocked"
+  sequence. `ShareCard` renders a real downloadable PNG via `html-to-image`
+  — not a mock. The avatar's own leveling-up animation plays underneath
+  automatically, since it's driven by the same `moodState` the server just
+  computed.
+- `scripts/seed.ts` (`npm run db:seed`) — inserts a `demo-user-terra` user
+  and walks 30 days of realistic synthetic metrics through the *real*
+  `processDailyMetrics` pipeline (same code path as a live sync), so the
+  seeded snapshots/milestones are exactly what real usage would produce: a
+  mixed start, a 14-day streak (crossing the 3/7/14-day milestones), a rest
+  day, and a shorter closing streak. Re-running it wipes and regenerates
+  that user's data, so it's safe to run again. `demo-user-terra` has no
+  real Google account to sign in with — to view the seeded dashboard for a
+  demo/portfolio recording, temporarily point `app/dashboard/page.tsx`'s
+  `userId` at `"demo-user-terra"` instead of `session.user.id`.
 
 ### Phase 4 notes — real data pipeline
 

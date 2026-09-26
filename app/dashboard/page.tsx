@@ -2,8 +2,7 @@ import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import AvatarSection from "@/components/dashboard/AvatarSection";
 import { StatBar } from "@/components/dashboard/StatBar";
-import { SyncButton } from "@/components/dashboard/SyncButton";
-import { ManualLogForm } from "@/components/dashboard/ManualLogForm";
+import { DashboardActions } from "@/components/dashboard/DashboardActions";
 import { HistoryTimeline } from "@/components/dashboard/HistoryTimeline";
 import { TARGETS } from "@/lib/avatarEngine";
 import { getHistory, getSnapshot, getUser, todayISO } from "@/lib/db/queries";
@@ -113,9 +112,8 @@ export default async function DashboardPage() {
               energyLevel={avatarState.energyLevel}
             />
 
-            <div className="mt-4 flex flex-col items-center gap-3">
-              <SyncButton />
-              <ManualLogForm />
+            <div className="mt-4">
+              <DashboardActions />
             </div>
           </section>
 

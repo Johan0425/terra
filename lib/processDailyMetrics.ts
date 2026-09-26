@@ -1,4 +1,5 @@
-import "server-only";
+// No `import "server-only"` guard: scripts/seed.ts imports this via plain
+// tsx/Node, which isn't covered by Next's webpack alias for that package.
 import { calculateAvatarState } from "@/lib/avatarEngine";
 import {
   computeCurrentStreak,
@@ -20,11 +21,11 @@ import type { AvatarState, DailyMetrics } from "@/lib/types";
 export async function processDailyMetrics(
   userId: string,
   partialMetrics: Omit<DailyMetrics, "streakDays">,
+  date: string = todayISO(),
 ): Promise<{ metrics: DailyMetrics; avatarState: AvatarState }> {
   const user = await getUser(userId);
   if (!user) throw new Error("User not found");
 
-  const date = todayISO();
   const streakDays = await computeCurrentStreak(
     userId,
     date,

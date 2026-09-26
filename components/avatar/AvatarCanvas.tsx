@@ -66,10 +66,13 @@ function AutoRotate({ idleSeconds = 4 }: { idleSeconds?: number }) {
   };
 
   useEffect(() => {
-    resetIdleTimer();
+    // Mount-only: schedule the initial idle timeout directly rather than
+    // calling resetIdleTimer() (which also calls setAutoRotate — setState
+    // shouldn't run synchronously in an effect body). autoRotate already
+    // starts false, so there's nothing to reset yet.
+    idleTimer.current = setTimeout(() => setAutoRotate(true), idleSeconds * 1000);
     return () => clearTimeout(idleTimer.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [idleSeconds]);
 
   return (
     <OrbitControls

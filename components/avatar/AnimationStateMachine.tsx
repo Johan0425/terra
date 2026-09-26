@@ -7,7 +7,7 @@
 // Clip mapping (placeholder rig -> TERRA state). See AvatarModel.tsx's header
 // for how to export a custom model; rename these to match its own clip names
 // (or rename the clips on export to match this list) when swapping models.
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import * as THREE from "three";
 import type { MoodState } from "@/lib/types";
@@ -34,10 +34,20 @@ export function AnimationStateMachine({
   moodState,
   children,
 }: AnimationStateMachineProps) {
-  const [actions, setActions] = useState<ActionMap | null>(null);
+  // The AnimationAction map is an imperative Three.js handle, not UI state —
+  // it lives in a ref (mutating THREE objects is fine there) and `ready`
+  // just triggers the effect below once it exists.
+  const actionsRef = useRef<ActionMap | null>(null);
   const currentAction = useRef<THREE.AnimationAction | null>(null);
+  const [ready, setReady] = useState(false);
+
+  const handleReady = useCallback((actions: ActionMap) => {
+    actionsRef.current = actions;
+    setReady(true);
+  }, []);
 
   useEffect(() => {
+    const actions = actionsRef.current;
     if (!actions) return;
 
     const clipName = CLIP_FOR_STATE[moodState];
@@ -77,12 +87,12 @@ export function AnimationStateMachine({
     }
 
     next.setLoop(THREE.LoopRepeat, Infinity);
-  }, [moodState, actions]);
+  }, [moodState, ready]);
 
   return (
     <>
-      <AvatarModel onReady={setActions} />
-      {actions ? children : null}
+      <AvatarModel onReady={handleReady} />
+      {ready ? children : null}
     </>
   );
 }

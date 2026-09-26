@@ -5,8 +5,13 @@
 // avatarEngine as the Google Fit sync via /api/manual-log.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { AvatarState, DailyMetrics } from "@/lib/types";
 
-export function ManualLogForm() {
+export interface ManualLogFormProps {
+  onResult?: (result: { metrics: DailyMetrics; avatarState: AvatarState }) => void;
+}
+
+export function ManualLogForm({ onResult }: ManualLogFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [steps, setSteps] = useState(5000);
@@ -29,6 +34,7 @@ export function ManualLogForm() {
       if (!res.ok) throw new Error(data.error ?? "Failed to save");
       setStatus("idle");
       setOpen(false);
+      onResult?.(data);
       router.refresh();
     } catch (err) {
       setStatus("error");

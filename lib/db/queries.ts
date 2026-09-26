@@ -1,4 +1,8 @@
-import "server-only";
+// No `import "server-only"` guard here deliberately: scripts/seed.ts imports
+// this module through processDailyMetrics.ts via plain tsx/Node (not Next's
+// bundler), and that guard throws unconditionally outside Next's webpack
+// alias. Only ever import this from Server Components, Route Handlers, or
+// scripts — never from a "use client" file.
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "./client";
 import { accounts, dailySnapshots, milestones, users } from "./schema";

@@ -15,7 +15,7 @@
 // the same gltf-transform + gltfjsx pipeline above, and drop it in at the same path.
 
 import * as THREE from "three";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JSX } from "react";
 import { useGraph } from "@react-three/fiber";
 import { useGLTF, useAnimations } from "@react-three/drei";
@@ -93,7 +93,9 @@ export function AvatarModel(
   const { scene, animations } = useGLTF(
     AVATAR_MODEL_PATH,
   ) as unknown as GLTFResult;
-  const clone = useMemoClone(scene);
+  // useGLTF caches/returns a stable `scene` per URL, so memoizing on it is
+  // enough to clone exactly once per mount (SkeletonUtils.clone is not free).
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const { nodes, materials } = useGraph(clone) as unknown as GLTFResult;
   const { actions } = useAnimations(animations, group);
 
@@ -158,17 +160,6 @@ export function AvatarModel(
       </group>
     </group>
   );
-}
-
-// SkeletonUtils.clone() must run once per mount, not on every render.
-function useMemoClone(scene: THREE.Object3D) {
-  const ref = useRef<{ src: THREE.Object3D; clone: THREE.Object3D } | null>(
-    null,
-  );
-  if (!ref.current || ref.current.src !== scene) {
-    ref.current = { src: scene, clone: SkeletonUtils.clone(scene) };
-  }
-  return ref.current.clone;
 }
 
 useGLTF.preload(AVATAR_MODEL_PATH);
