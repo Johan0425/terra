@@ -16,10 +16,52 @@ from Google Fit or logged manually.
 | 3 | Animation State Machine (idle / energized / fatigued / leveling-up) | ✅ done |
 | 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ✅ done |
 | 5 | Public landing page + milestones/share cards + demo seed data | ✅ done |
-| — | Face photo on the avatar (post-launch addition, see below) | ✅ done |
-| — | Real human body swap (post-launch, static T-pose for now) | 🟡 in progress |
+| — | Face photo on the avatar (post-launch addition, see below) | ⬜ disabled (pulled, see below) |
+| — | Real human body swap (post-launch, static T-pose for now) | ✅ done |
+| — | Procedural body-weight morph, driven by real BMI | ✅ done |
 
-### Body model — Mixamo swap (in progress)
+### Body-weight morph — driven by real BMI
+
+Settings has a **Body** section (height + weight, kg/cm) that computes real
+BMI and drives how the avatar's build actually looks — no installs, no new
+3D assets, nothing hand-sculpted. The technique (`scripts/generate-
+body-morphs.mjs`, run once to bake the result into `public/models/
+character.glb`):
+
+1. For every vertex in the body/shirt/pants/shoes meshes, read its existing
+   bone weights (already in the file — that's what makes it *skinned*) and
+   compute a "girth" score: hips and belly weighted highest, thighs
+   moderate, forearms/hands/feet/head ~zero, so the effect looks like a
+   real body changing, not a uniformly-inflated balloon.
+2. Displace each vertex along its own normal by `girth × displacement`,
+   generating a "heavy" delta (positive) and a "thin" delta (negative,
+   smaller range — bodies have more room to gain than a T-pose export has
+   to lose).
+3. Write those deltas in as real glTF morph targets (`primitive.targets`,
+   named via the `extras.targetNames` convention) on the existing mesh —
+   the base geometry is untouched, so this is fully reversible and doesn't
+   need re-touching if the base body changes proportions later.
+
+At runtime, `lib/bodyMorph.ts` converts height+weight into BMI, maps it
+piecewise-linearly onto a **-1 (thin) to 1 (heavy)** range around a BMI-22
+neutral point (tune the thresholds there), and `AvatarModel.tsx` sets that
+as the `heavy`/`thin` morph target influences on each mesh — smoothly, in
+the browser, with zero additional network requests.
+
+**Compatibility gotcha that cost real debugging time**: Draco geometry
+compression and glTF morph targets don't mix — a Draco-compressed base
+mesh with targets added afterward loads with `morphTargetInfluences`
+silently `undefined`, and the renderer throws every frame trying to read
+its `.length`. The model is regenerated **without** Draco (`--compress
+false`) specifically because of this; texture compression (WebP) is still
+applied and does the real size-reduction work regardless. Separately: R3F
+assigns `geometry` as a plain prop *after* constructing a mesh, so the
+constructor-time `updateMorphTargets()` call that normally wires up
+`morphTargetInfluences`/`morphTargetDictionary` from
+`geometry.morphAttributes` never runs — `AvatarModel.tsx` calls it manually
+once the mesh ref attaches.
+
+### Body model — Mixamo swap
 
 `public/models/character.glb` is now a real human Mixamo character (a
 properly-skinned "Ch21" model — realistic proportions, clothed, not the
@@ -29,20 +71,24 @@ Phase 2 robot placeholder), converted via:
 node_modules/fbx2gltf/bin/Darwin/FBX2glTF -i assets-src/mixamo/tpose.fbx \
   -o assets-src/mixamo-converted/tpose.glb --binary
 npx gltf-transform optimize assets-src/mixamo-converted/tpose.glb public/models/character.glb \
-  --compress draco --texture-compress webp --texture-size 1024 --simplify false
+  --compress false --texture-compress webp --texture-size 1024 --simplify false
 npx gltfjsx public/models/character.glb --types --keepnames
+node scripts/generate-body-morphs.mjs   # adds the heavy/thin morph targets, in place
 ```
 
-(47MB → 1MB, mostly from compressing the four 2K-4K PNG textures to WebP at
-1024px.) Unlike the robot, this model is *properly* skinned (standard glTF
-`JOINTS_0`/`WEIGHTS_0`) and already sits at real-world meter scale — no
+(47MB → 3.1MB before the morph script, ~4.5MB after — mostly from
+compressing the four 2K-4K PNG textures to WebP at 1024px. **No Draco**
+this time: Draco-compressed geometry + glTF morph targets don't mix, see
+the "Body-weight morph" section above for what that broke.) Unlike the
+robot, this model is *properly* skinned (standard glTF `JOINTS_0`/
+`WEIGHTS_0`) and already sits at real-world meter scale — no
 `AVATAR_SCALE_CORRECTION` needed at all, and the same camera/lighting/floor
 constants from Phase 2 carried over unchanged.
 
 **Current limitation:** this is a T-pose export only — no animation clips.
 `AnimationStateMachine`'s clip lookups all miss, so the avatar holds the
 T-pose regardless of `moodState` (expected, not a bug — the particle aura
-and face card both still react normally). To finish this:
+and body-weight morph both still react normally). To finish this:
 
 1. From the same Mixamo character, download `Idle`, `Running`, `Sitting
    Idle`, and an energetic dance (e.g. `Hip Hop Dancing`) as FBX **with
@@ -59,7 +105,14 @@ The original robot placeholder is kept at
 source files aren't committed (~150MB of FBX + extracted textures) — see
 `.gitignore` and the command block above to regenerate.
 
-### Face photo — "make the avatar recognizably you"
+### Face photo — built, then pulled
+
+**Currently disabled**: it worked, but looked off on a real photo (blurry
+at that display size) — `app/dashboard/page.tsx` simply doesn't pass
+`facePhotoUrl` to `AvatarSection` anymore (that's the one line to flip to
+re-enable it). Every piece below is otherwise untouched and still works.
+Revisiting the *approach* (sharper crop, a skin-tone-matched material, a
+real UV-mapped texture instead of a floating card) is real future work.
 
 Settings (`/dashboard/settings`) has an "Avatar" section where you upload a
 photo of yourself. The pipeline, end to end:

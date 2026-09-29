@@ -7,6 +7,7 @@ import { HistoryTimeline } from "@/components/dashboard/HistoryTimeline";
 import { TARGETS } from "@/lib/avatarEngine";
 import { getHistory, getSnapshot, getUser, todayISO } from "@/lib/db/queries";
 import type { AvatarState, DailyMetrics } from "@/lib/types";
+import { bodyWeightFromProfile } from "@/lib/bodyMorph";
 
 const EMPTY_METRICS: DailyMetrics = {
   steps: 0,
@@ -40,6 +41,7 @@ export default async function DashboardPage() {
   const avatarState =
     (todaySnapshot?.calculatedState as AvatarState) ?? EMPTY_STATE;
   const hasSyncedToday = Boolean(todaySnapshot);
+  const bodyWeight = bodyWeightFromProfile(user?.heightCm, user?.weightKg);
 
   return (
     <main className="min-h-screen bg-black px-6 py-10 text-zinc-100">
@@ -110,9 +112,13 @@ export default async function DashboardPage() {
             <AvatarSection
               moodState={avatarState.moodState}
               energyLevel={avatarState.energyLevel}
-              facePhotoUrl={
-                user?.avatarPhotoPath ? "/api/avatar-photo/photo" : undefined
-              }
+              bodyWeight={bodyWeight}
+              // TODO: Johan — face card on the 3D body was tried and pulled
+              // (looked off, especially blown up on a low-res upload). The
+              // upload pipeline (Settings -> Blob -> /api/avatar-photo/photo)
+              // and AvatarModel's billboard-card renderer both still work;
+              // this is the one line that (re)activates it if you want to
+              // revisit the look later.
             />
 
             <div className="mt-4">

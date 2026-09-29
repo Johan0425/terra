@@ -35,6 +35,10 @@ export const users = pgTable("user", {
   // /api/avatar-photo/photo route). Mapped onto the avatar's head as a
   // texture — see components/avatar/FaceCard.tsx.
   avatarPhotoPath: text("avatarPhotoPath"),
+  // Self-reported, used only to compute BMI -> avatar body-weight morph
+  // (see lib/bodyMorph.ts). Nullable: until set, the avatar stays neutral.
+  heightCm: integer("heightCm"),
+  weightKg: integer("weightKg"),
 });
 
 export const accounts = pgTable(

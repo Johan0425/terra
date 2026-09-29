@@ -24,12 +24,14 @@ export interface AvatarSectionProps {
   moodState: MoodState;
   energyLevel: number;
   facePhotoUrl?: string;
+  bodyWeight?: number;
 }
 
 export default function AvatarSection({
   moodState,
   energyLevel,
   facePhotoUrl,
+  bodyWeight,
 }: AvatarSectionProps) {
   return (
     <div className="h-[60vh] w-full border border-amber-500/20 sm:h-[70vh]">
@@ -37,6 +39,7 @@ export default function AvatarSection({
         moodState={moodState}
         energyLevel={energyLevel}
         facePhotoUrl={facePhotoUrl}
+        bodyWeight={bodyWeight}
       />
     </div>
   );

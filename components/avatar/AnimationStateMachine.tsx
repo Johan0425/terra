@@ -27,6 +27,7 @@ type ActionMap = Record<string, THREE.AnimationAction | null>;
 export interface AnimationStateMachineProps {
   moodState: MoodState;
   facePhotoUrl?: string;
+  bodyWeight?: number;
   /** Rendered once actions are ready, e.g. particle effects that key off the active clip. */
   children?: ReactNode;
 }
@@ -34,6 +35,7 @@ export interface AnimationStateMachineProps {
 export function AnimationStateMachine({
   moodState,
   facePhotoUrl,
+  bodyWeight,
   children,
 }: AnimationStateMachineProps) {
   // The AnimationAction map is an imperative Three.js handle, not UI state —
@@ -93,7 +95,7 @@ export function AnimationStateMachine({
 
   return (
     <>
-      <AvatarModel onReady={handleReady} facePhotoUrl={facePhotoUrl} />
+      <AvatarModel onReady={handleReady} facePhotoUrl={facePhotoUrl} bodyWeight={bodyWeight} />
       {ready ? children : null}
     </>
   );

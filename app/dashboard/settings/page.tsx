@@ -1,9 +1,10 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { getUser, updateUserGoal } from "@/lib/db/queries";
+import { getUser, updateUserGoal, updateUserBodyProfile } from "@/lib/db/queries";
 import { revalidatePath } from "next/cache";
 import type { UserGoal } from "@/lib/types";
 import { AvatarPhotoUpload } from "@/components/dashboard/AvatarPhotoUpload";
+import { calculateBMI } from "@/lib/bodyMorph";
 
 const GOALS: { value: UserGoal; label: string; blurb: string }[] = [
   {
@@ -35,6 +36,18 @@ export default async function SettingsPage() {
     const s = await auth();
     if (!s?.user) return;
     await updateUserGoal(s.user.id, goal);
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard");
+  }
+
+  async function setBodyProfile(formData: FormData) {
+    "use server";
+    const heightCm = Number(formData.get("heightCm"));
+    const weightKg = Number(formData.get("weightKg"));
+    if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) return;
+    const s = await auth();
+    if (!s?.user) return;
+    await updateUserBodyProfile(s.user.id, Math.round(heightCm), Math.round(weightKg));
     revalidatePath("/dashboard/settings");
     revalidatePath("/dashboard");
   }
@@ -96,6 +109,50 @@ export default async function SettingsPage() {
           >
             Save Goal
           </button>
+        </form>
+
+        <h2 className="mt-8 text-xs uppercase tracking-[0.3em] text-amber-500/80">
+          Body
+        </h2>
+        <p className="mt-1 text-xs text-zinc-600">
+          Drives how the avatar&apos;s build actually looks — computed from
+          real BMI, not a guess. Leave blank to keep the avatar at its
+          neutral build.
+        </p>
+        <form action={setBodyProfile} className="mt-4 flex flex-wrap items-end gap-3">
+          <label className="text-sm text-zinc-400">
+            Height (cm)
+            <input
+              type="number"
+              name="heightCm"
+              min={100}
+              max={250}
+              defaultValue={user?.heightCm ?? undefined}
+              className="mt-1 block w-28 border border-zinc-700 bg-black px-2 py-1.5 text-zinc-100"
+            />
+          </label>
+          <label className="text-sm text-zinc-400">
+            Weight (kg)
+            <input
+              type="number"
+              name="weightKg"
+              min={30}
+              max={300}
+              defaultValue={user?.weightKg ?? undefined}
+              className="mt-1 block w-28 border border-zinc-700 bg-black px-2 py-1.5 text-zinc-100"
+            />
+          </label>
+          <button
+            type="submit"
+            className="border border-amber-500/60 bg-amber-500/10 px-4 py-2 text-xs uppercase tracking-widest text-amber-400 hover:bg-amber-500/20"
+          >
+            Save
+          </button>
+          {user?.heightCm && user?.weightKg && (
+            <span className="text-xs text-zinc-600">
+              BMI: {calculateBMI(user.heightCm, user.weightKg).toFixed(1)}
+            </span>
+          )}
         </form>
 
         <h2 className="mt-8 text-xs uppercase tracking-[0.3em] text-amber-500/80">

@@ -23,6 +23,17 @@ export async function updateUserAvatarPhotoPath(userId: string, path: string) {
     .where(eq(users.id, userId));
 }
 
+export async function updateUserBodyProfile(
+  userId: string,
+  heightCm: number,
+  weightKg: number,
+) {
+  await db
+    .update(users)
+    .set({ heightCm, weightKg })
+    .where(eq(users.id, userId));
+}
+
 export async function updateUserStreaks(
   userId: string,
   currentStreak: number,

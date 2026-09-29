@@ -67,6 +67,13 @@ export function AvatarModel(
     onReady?: (actions: Record<string, THREE.AnimationAction | null>) => void;
     /** Same-origin URL serving the user's cropped face photo (see /api/avatar-photo/photo). */
     facePhotoUrl?: string;
+    /**
+     * -1 (thinnest) to 1 (heaviest), 0 = as-authored. Drives the "heavy"/
+     * "thin" morph targets baked in by scripts/generate-body-morphs.mjs —
+     * procedural, no new 3D assets, reusing this mesh's own bone weights to
+     * decide how much each vertex should move.
+     */
+    bodyWeight?: number;
   },
 ) {
   const group = useRef<THREE.Group>(null);
@@ -79,10 +86,42 @@ export function AvatarModel(
   const { nodes, materials } = useGraph(clone) as unknown as GLTFResult;
   const { actions } = useAnimations(animations, group);
 
-  const { onReady, facePhotoUrl, ...groupProps } = props;
+  const { onReady, facePhotoUrl, bodyWeight = 0, ...groupProps } = props;
   const { scene: r3fScene, camera } = useThree();
   const faceCardRef = useRef<THREE.Mesh | null>(null);
   const headBoneRef = useRef<THREE.Object3D | null>(null);
+
+  // Plain object refs (not ref-callback functions) — React populates these
+  // itself during commit, so there's no closure here reading/writing
+  // `.current` during render for the linter's purity rules to trip on.
+  const pantsMeshRef = useRef<THREE.SkinnedMesh>(null);
+  const shirtMeshRef = useRef<THREE.SkinnedMesh>(null);
+  const bodyMeshRef = useRef<THREE.SkinnedMesh>(null);
+  const shoesMeshRef = useRef<THREE.SkinnedMesh>(null);
+
+  useEffect(() => {
+    const meshes = [
+      pantsMeshRef.current,
+      shirtMeshRef.current,
+      bodyMeshRef.current,
+      shoesMeshRef.current,
+    ];
+    for (const mesh of meshes) {
+      if (!mesh) continue;
+      // R3F assigns `geometry` as a plain prop after construction, so the
+      // constructor-time `updateMorphTargets()` call that normally builds
+      // `morphTargetInfluences`/`morphTargetDictionary` from
+      // geometry.morphAttributes never runs — without this, the renderer
+      // finds geometry.morphAttributes present but the mesh's own influences
+      // array undefined, and throws reading `.length` on it every frame.
+      mesh.updateMorphTargets();
+      const dict = mesh.morphTargetDictionary;
+      const influences = mesh.morphTargetInfluences;
+      if (!dict || !influences) continue;
+      if (dict.heavy !== undefined) influences[dict.heavy] = Math.max(0, bodyWeight);
+      if (dict.thin !== undefined) influences[dict.thin] = Math.max(0, -bodyWeight);
+    }
+  }, [bodyWeight]);
 
   useEffect(() => {
     onReady?.(actions);
@@ -187,24 +226,28 @@ export function AvatarModel(
             <primitive object={nodes.mixamorigHips} />
           </group>
           <skinnedMesh
+            ref={pantsMeshRef}
             name="Ch21_Pants"
             geometry={nodes.Ch21_Pants.geometry}
             material={materials.Ch21_body}
             skeleton={nodes.Ch21_Pants.skeleton}
           />
           <skinnedMesh
+            ref={shirtMeshRef}
             name="Ch21_Shirt"
             geometry={nodes.Ch21_Shirt.geometry}
             material={materials.Ch21_body}
             skeleton={nodes.Ch21_Shirt.skeleton}
           />
           <skinnedMesh
+            ref={bodyMeshRef}
             name="Ch21_Body"
             geometry={nodes.Ch21_Body.geometry}
             material={materials.Ch21_body}
             skeleton={nodes.Ch21_Body.skeleton}
           />
           <skinnedMesh
+            ref={shoesMeshRef}
             name="Ch21_Shoes"
             geometry={nodes.Ch21_Shoes.geometry}
             material={materials.Ch21_body}

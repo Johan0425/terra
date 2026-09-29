@@ -104,12 +104,14 @@ export interface AvatarCanvasProps {
   moodState: MoodState;
   energyLevel: number;
   facePhotoUrl?: string;
+  bodyWeight?: number;
 }
 
 export default function AvatarCanvas({
   moodState,
   energyLevel,
   facePhotoUrl,
+  bodyWeight,
 }: AvatarCanvasProps) {
   const auraColor = AURA_COLORS[moodState];
 
@@ -126,7 +128,7 @@ export default function AvatarCanvas({
           <ThreePointLighting auraColor={auraColor} />
           <Environment preset="city" environmentIntensity={0.15} />
           <Suspense fallback={null}>
-            <AnimationStateMachine moodState={moodState} facePhotoUrl={facePhotoUrl}>
+            <AnimationStateMachine moodState={moodState} facePhotoUrl={facePhotoUrl} bodyWeight={bodyWeight}>
               <ParticleAura
                 auraColor={auraColor}
                 energyLevel={energyLevel}
