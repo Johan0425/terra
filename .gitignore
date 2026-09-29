@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# large source-asset intermediates (~150MB) — the pipeline that produces
+# public/models/character.glb from these is documented in
+# components/avatar/AvatarModel.tsx's header comment; regenerate rather than
+# commit. robot-archive/ is small (180KB) and stays tracked for reference.
+/assets-src/mixamo/
+/assets-src/mixamo-converted/

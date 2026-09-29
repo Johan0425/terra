@@ -17,6 +17,47 @@ from Google Fit or logged manually.
 | 4 | `avatarEngine.ts` + Google Fit sync + dashboard HUD + history timeline | ✅ done |
 | 5 | Public landing page + milestones/share cards + demo seed data | ✅ done |
 | — | Face photo on the avatar (post-launch addition, see below) | ✅ done |
+| — | Real human body swap (post-launch, static T-pose for now) | 🟡 in progress |
+
+### Body model — Mixamo swap (in progress)
+
+`public/models/character.glb` is now a real human Mixamo character (a
+properly-skinned "Ch21" model — realistic proportions, clothed, not the
+Phase 2 robot placeholder), converted via:
+
+```bash
+node_modules/fbx2gltf/bin/Darwin/FBX2glTF -i assets-src/mixamo/tpose.fbx \
+  -o assets-src/mixamo-converted/tpose.glb --binary
+npx gltf-transform optimize assets-src/mixamo-converted/tpose.glb public/models/character.glb \
+  --compress draco --texture-compress webp --texture-size 1024 --simplify false
+npx gltfjsx public/models/character.glb --types --keepnames
+```
+
+(47MB → 1MB, mostly from compressing the four 2K-4K PNG textures to WebP at
+1024px.) Unlike the robot, this model is *properly* skinned (standard glTF
+`JOINTS_0`/`WEIGHTS_0`) and already sits at real-world meter scale — no
+`AVATAR_SCALE_CORRECTION` needed at all, and the same camera/lighting/floor
+constants from Phase 2 carried over unchanged.
+
+**Current limitation:** this is a T-pose export only — no animation clips.
+`AnimationStateMachine`'s clip lookups all miss, so the avatar holds the
+T-pose regardless of `moodState` (expected, not a bug — the particle aura
+and face card both still react normally). To finish this:
+
+1. From the same Mixamo character, download `Idle`, `Running`, `Sitting
+   Idle`, and an energetic dance (e.g. `Hip Hop Dancing`) as FBX **with
+   skin**.
+2. Convert each the same way, then combine into one GLB with each clip
+   *renamed* from Mixamo's generic `mixamo.com` to match
+   `CLIP_FOR_STATE` in `AnimationStateMachine.tsx` (`Idle` / `Running` /
+   `Sitting` / `Dance`) — via `gltf-transform`'s scripting API
+   (`Animation.setName()`) or Blender's NLA editor.
+3. Drop the combined file in at the same path; nothing else changes.
+
+The original robot placeholder is kept at
+`assets-src/robot-archive/character-robot.glb` for reference. Raw Mixamo
+source files aren't committed (~150MB of FBX + extracted textures) — see
+`.gitignore` and the command block above to regenerate.
 
 ### Face photo — "make the avatar recognizably you"
 
@@ -129,13 +170,15 @@ particle aura rather than a dramatic pose change — expected for this
 placeholder, not a bug. A custom model with more expressive clips (per the
 Phase 2 notes above) will make the pose difference more visible too.
 
-### Phase 2 notes — the placeholder model
+### Phase 2 notes — the original placeholder model (superseded)
 
-`public/models/character.glb` is **not** a Mixamo export — Mixamo requires an
-interactive Adobe-account browser session with no public API, so an agent
-can't fetch one. It's `RobotExpressive.glb`, the CC0-licensed rigged
-placeholder from the three.js examples repo (credit: Tomás Laulhé /
-Don McCurdy), run through:
+**Superseded by the "Body model — Mixamo swap" section above** — kept here
+for history. `public/models/character.glb` was originally `RobotExpressive.
+glb`, the CC0-licensed rigged placeholder from the three.js examples repo
+(credit: Tomás Laulhé / Don McCurdy), since Mixamo requires an interactive
+Adobe-account browser session an agent can't drive on its own. It's now
+archived at `assets-src/robot-archive/character-robot.glb`. Original
+pipeline, run through:
 
 ```bash
 npx gltf-transform optimize assets-src/RobotExpressive.raw.glb public/models/character.glb \
